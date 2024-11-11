@@ -41,7 +41,7 @@ def load_MeerKAT_mean_data(file_name):
     freqs = hdul[4].data[0]['DAT_FREQ'] * 1e6
     N = hdul[4].data[0]['DATA'][0][0].shape[0]
     profile_data = np.zeros((6, N))
-    add_shift = (np.argmax(hdul[4].data[0]['DATA'][0][0]) - N//4)
+    add_shift = (np.argmax(hdul[4].data[0]['DATA'][0][0]) - N//4) 
     for channel in range(8):
         for stocks in range(4):
             hdul[4].data[0]['DATA'][stocks][channel] = np.roll(hdul[4].data[0]['DATA'][stocks][channel], int(DC * (1/freqs[0]**2 - 1/freqs[channel]**2) * N / P) - add_shift)

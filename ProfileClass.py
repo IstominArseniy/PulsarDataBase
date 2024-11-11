@@ -48,7 +48,14 @@ class PulsarProfile:
         self.peaks_arr = self.find_peaks()
         self.profile_type = self.find_profile_type()
 
-    def plot_profile(self, plot_fit=False, zoom=False):
+    def get_smoothed_profile(self):
+        noise = AuxFunctions.noise_estimation(self.I)
+        phase = np.linspace(0, 1, self.Ncounts)
+        spl = scipy.interpolate.splrep(phase, self.I, s=1.4 * self.Ncounts*noise**2)
+        I_func = scipy.interpolate.BSpline(*spl)
+        return I_func(phase)
+
+    def plot_profile(self, plot_pol=True, plot_fit=False, zoom=False):
         # TODO zoom to profile
         phase = np.linspace(0, 1, self.Ncounts)
         fig, axs = plt.subplots(2, height_ratios=[1, 4])
@@ -56,23 +63,24 @@ class PulsarProfile:
         good_L_array = ((self.L / (np.abs(self.I) + 0.01)) > 0.1) & (self.I > 4 * noise)
         axs[0].set_xlim(0, 1)
         axs[0].scatter(phase[good_L_array], self.PA[good_L_array], c='black', s=3)
-        axs[1].plot(phase, self.I, c='black', label='I')
-        axs[1].plot(phase, self.V, c='blue', label='V')
-        axs[1].plot(phase, self.L, c='red', label='L')
+        axs[1].plot(phase, self.I, c='black', label='I', linewidth=1)
+        spl = scipy.interpolate.splrep(phase[good_L_array], self.PA[good_L_array], s=len(phase[good_L_array])*5**2)
+        PA_func = scipy.interpolate.BSpline(*spl)
+        axs[0].plot(phase[good_L_array], PA_func(phase[good_L_array]), color='yellow')
+
+        if plot_pol == True:
+            axs[1].plot(phase, self.V, c='blue', label='V')
+            axs[1].plot(phase, self.L, c='red', label='L')
         if plot_fit == True:
-            noise = AuxFunctions.noise_estimation(self.I)
-            spl = scipy.interpolate.splrep(phase, self.I, s=self.Ncounts*noise**2)
-            I_func = scipy.interpolate.BSpline(*spl)
-            axs[1].plot(phase, I_func(phase), c='yellow')
+            axs[1].plot(phase, self.get_smoothed_profile(), c='yellow')
         fig.legend()
         fig.show()
         
     def find_peaks(self):
         noise = AuxFunctions.noise_estimation(self.I)
-        phase = np.linspace(0, 1, self.Ncounts)
-        spl = scipy.interpolate.splrep(phase, self.I, s=self.Ncounts*noise**2)
-        I_func = scipy.interpolate.BSpline(*spl)
-        peaks, info = scipy.signal.find_peaks(I_func(phase), prominence=np.max(I_func(phase) * 0.05), height=2 * noise) #before here was max(self.I * 0.05) and height=4*noise
+        smoothed_profile = self.get_smoothed_profile()
+        # peaks, info = scipy.signal.find_peaks(smoothed_profile, prominence=np.max(smoothed_profile * 0.05), height=2 * noise) #before here was max(smoothed_profile * 0.05) and height=4*noise
+        peaks, info = scipy.signal.find_peaks(smoothed_profile, prominence = 4 * noise, height=max(4 * noise, np.max(smoothed_profile) * 0.01))
         return peaks
 
     def find_profile_type(self):
@@ -102,7 +110,7 @@ class PulsarProfile:
         # oversampling-------
         phase = np.linspace(0, 1, self.Ncounts)
         phase_x10 = np.linspace(0, 1, 10 * self.Ncounts)
-        Is = scipy.interpolate.interp1d(phase, self.I)(phase_x10)
+        Is = scipy.interpolate.interp1d(phase, self.get_smoothed_profile())(phase_x10)
         #--------------------
         left_ind = np.where(np.isclose(Is, height, rtol=1e-1))[0][0] // 10
         right_ind = np.where(np.isclose(Is, height, rtol=1e-1))[0][-1] // 10
@@ -121,7 +129,7 @@ class PulsarProfile:
         # oversampling-------
         phase = np.linspace(0, 1, self.Ncounts)
         phase_x10 = np.linspace(0, 1, 10 * self.Ncounts)
-        Is = scipy.interpolate.interp1d(phase, self.I)(phase_x10)
+        Is = scipy.interpolate.interp1d(phase, self.get_smoothed_profile())(phase_x10)
         #--------------------
         left_ind = np.where(np.isclose(Is, height_a, rtol=1e-1))[0][0]
         right_ind = np.where(np.isclose(Is, height_a, rtol=1e-1))[0][-1]
@@ -139,15 +147,20 @@ class PulsarProfile:
         # print(left_ind, right_ind)
         Varray = self.V[left_ind:right_ind]
         PAarray = self.PA[left_ind:right_ind]
+        noise = AuxFunctions.noise_estimation(self.I)
+        good_L_array = ((self.L[left_ind:right_ind] / (np.abs(self.I[left_ind:right_ind]) + 0.01)) > 0.1) & (self.I[left_ind:right_ind] > 4 * noise)
         N = Varray.shape[0]
         xs = np.arange(0, N, 1)
-        spl = scipy.interpolate.splrep(xs, PAarray, s=N*5**2)
+        if len(xs[good_L_array]) <= 3:
+            return '?'
+        spl = scipy.interpolate.splrep(xs[good_L_array], PAarray[good_L_array], s=N*5**2)
         PA_func = scipy.interpolate.BSpline(*spl)
         ders = PA_func(xs, 1) 
         count = 0
         for i in range(N):
             count += ((Varray[i]>0) * 2 - 1) * ((ders[i]>0) * 2 - 1)
         count = count / N
+        # print(count)
         if count > 0.4:
             return 'X'
         elif count < -0.4:

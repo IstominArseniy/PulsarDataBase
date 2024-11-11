@@ -17,15 +17,22 @@ import scipy.spatial
 
 
 def noise_estimation(data):
+    # N = data.shape[0]
+    # n5 = N // 10
+    # mean = np.max(np.abs(data))
+    # noise = 0
+    # for i in range(10):
+    #     if np.mean(np.abs(data[i * n5: (i+1) * n5])) < mean:
+    #         noise = np.sqrt(np.var(data[i * n5: (i+1) * n5]))
+    #         mean = np.mean(np.abs(data[i * n5: (i+1) * n5]))
+    # return noise
     N = data.shape[0]
-    n5 = N // 5
+    n8 = N // 8
     mean = np.max(np.abs(data))
-    noise = 0
-    for i in range(5):
-        if np.mean(np.abs(data[i * n5: (i+1) * n5])) < mean:
-            noise = np.sqrt(np.var(data[i * n5: (i+1) * n5]))
-            mean = np.mean(np.abs(data[i * n5: (i+1) * n5]))
-    return noise
+    sigmas = []
+    for i in range(8):
+        sigmas.append(np.var(data[i * n8: (i+1) * n8]))
+    return np.sqrt(np.min(sigmas))
     
 def noise_mean(data):
     N = data.shape[0]
