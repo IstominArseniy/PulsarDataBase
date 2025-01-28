@@ -88,9 +88,22 @@ def profile_fit(data_array, x_array, peak_number=1):
     elif peak_number==2:
         return dbl_gauss(x_array, *gaussian_fit(data_array, x_array, peak_number=2))
 
-def inverse_sample_function(dist, Npnts, x_min=-100, x_max=100, n=1e5, **kwargs):
+def inverse_sample_function(dist, Npnts, x_min=-100, x_max=100, n=1e6, **kwargs):
     x = np.linspace(x_min, x_max, int(n))
-    cumulative = np.cumsum(dist(x, **kwargs))
+    cumulative = np.cumsum(dist(x, **kwargs)) 
     cumulative -= cumulative.min()
     f = scipy.interpolate.interp1d(cumulative/cumulative.max(), x)
     return f(np.random.random(int(Npnts)))
+
+def calculate_width(chi, beta, rho):
+    dzeta = beta + chi
+    if np.sqrt(np.sin((rho + beta)/2) * np.sin((rho - beta)/2) / np.sin(chi) / np.sin(dzeta)) >= 1:
+        return np.nan
+    return 4 * np.arcsin(np.sqrt(np.sin((rho + beta)/2) * np.sin((rho - beta)/2) \
+    / np.sin(chi) / np.sin(dzeta)))
+
+def find_pl_ind(xs, ys):
+    log_xs = np.log(xs)
+    log_ys = np.log(ys)
+    res = scipy.stats.linregress(log_xs, log_ys)
+    return res.slope, res.rvalue
