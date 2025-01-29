@@ -40,7 +40,6 @@ def load_MeerKAT_mean_data(file_name):
     Jname = hdul[0].header['SRC_NAME']
     P = hdul[4].header['PERIOD']
     freqs = hdul[4].data[0]['DAT_FREQ'] * 1e6
-    print(RM, freqs)
     N = hdul[4].data[0]['DATA'][0][0].shape[0]
     profile_data = np.zeros((6, N))
     add_shift = (np.argmax(hdul[4].data[0]['DATA'][0][0]) - N//4) 
