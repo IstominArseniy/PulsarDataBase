@@ -58,7 +58,6 @@ def load_MeerKAT_mean_data(file_name):
         profile_data[3] += (hdul[4].data[0]['DATA'][3][channel].astype('int64') - aux.noise_mean(hdul[4].data[0]['DATA'][3][channel].astype('int64'))) * hdul[4].data[0]['DAT_SCL'][8*3+channel] * weight
         profile_data[4] += weight * np.sqrt(Q**2 + U**2)
         beta = RM * ((299792458 / freqs[0])**2 - (299792458 / freqs[channel])**2)
-        print(beta, 0.5 * np.arctan2(U[240], Q[240]), beta + 0.5 * np.arctan2(U[240], Q[240]), aux.shift_angle( beta + 0.5 * np.arctan2(U[240], Q[240])))
         profile_data[5] += aux.shift_angle(beta + 0.5 * np.arctan2(U, Q)) * 180 / np.pi * weight
     profile_data[4] -= aux.noise_mean(profile_data[4])
     # profile_data[5] = 0.5 * np.arctan2(profile_data[2], profile_data[1]) * 180 / np.pi
