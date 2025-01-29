@@ -57,13 +57,22 @@ def find_BIC(ys, func, xs, noise, n_params):
 
         
 
-def multi_gaus_scale(amps, disps):
+def multi_gauss_scale(amps, disps):
     amps = np.array(amps)
     disps = np.array(disps)
     return 1/np.sqrt(2*np.pi)/np.sum(disps * amps)
 
 def gauss_function(x, scale=1, shift=0, disp=1):
     return scale * np.exp(-(x - shift)**2 / 2 / disp**2)
+
+def gaussian_mixture(x, gauss_data):
+    # scales, shifts, disps = np.array(scales), np.array(shifts), np.array(disps)
+    # if scales.shape[0] != shift.shape[0] or scales.shape[0] != disps.shape[0] or disps.shape[0] != shift.shape[0]:
+    #     raise RuntimeError('Array shapes must be same!')
+    y = 0
+    for scale, shift, disp in gauss_data:
+        y += gauss_function(x, scale, shift, disp)
+    return y
 
 def dbl_gauss(x, scale1, shift1, disp1, scale2, shift2, disp2):            
     return gauss_function(x, scale1, shift1, disp1) + gauss_function(x, scale2, shift2, disp2)
@@ -107,3 +116,17 @@ def find_pl_ind(xs, ys):
     log_ys = np.log(ys)
     res = scipy.stats.linregress(log_xs, log_ys)
     return res.slope, res.rvalue
+
+def shift_angle(angle):
+    angle = np.asarray(angle)
+    scalar_in = (angle.ndim==0)
+    angle_vals = np.array(angle, copy=False, ndmin=1, dtype=float)
+    for i in range(angle_vals.shape[0]):
+        while angle_vals[i] > np.pi / 2:
+            angle_vals[i] -= np.pi
+        while angle_vals[i] < -np.pi / 2:
+            angle_vals[i] += np.pi
+    if scalar_in:
+        return angle_vals[0]
+    else:
+        return angle_vals
