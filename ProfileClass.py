@@ -72,7 +72,7 @@ class PulsarProfile:
                 int(max(left_ind - 0.25 * (right_ind - left_ind), 0)), int(min(right_ind + 0.25 * (right_ind - left_ind), self.Ncounts - 1))
         phase = np.linspace(left_ind / self.Ncounts, (right_ind + 1)/self.Ncounts, right_ind - left_ind + 1)
 
-        good_L_array = ((self.L[left_ind : right_ind + 1] / (np.abs(self.I[left_ind : right_ind + 1]) + 0.01)) > 0.05) & (self.I[left_ind : right_ind + 1] > 4 * noise)
+        good_L_array = ((self.L[left_ind : right_ind + 1] / (np.abs(self.I[left_ind : right_ind + 1]) + 0.01)) > 0.1) & (self.I[left_ind : right_ind + 1] > 4 * noise)
         axs[0].set_xlim(left_ind / self.Ncounts, (right_ind + 1)/self.Ncounts)
         axs[0].scatter(phase[good_L_array], self.PA[left_ind : right_ind + 1][good_L_array], c='black', s=3)
         axs[1].plot(phase, self.I[left_ind : right_ind + 1], c='black', label='I', linewidth=1)
@@ -121,8 +121,13 @@ class PulsarProfile:
         phase_x10 = np.linspace(0, 1, 10 * self.Ncounts)
         Is = scipy.interpolate.interp1d(phase, self.get_smoothed_profile())(phase_x10)
         #--------------------
-        left_ind = np.where(np.isclose(Is, height, rtol=5e-2))[0][0] // 10
-        right_ind = np.where(np.isclose(Is, height, rtol=5e-2))[0][-1] // 10
+        inds = np.where(np.isclose(Is, height, rtol=5e-2))[0]
+        if inds.shape[0] == 0:
+            left_ind = 0
+            right_ind = self.Ncounts - 1
+        else:
+            left_ind = inds[0] // 10
+            right_ind = inds[-1] // 10
         if right_ind - left_ind < 3:
             left_ind = max(0, left_ind - 3)
             right_ind = min(self.Ncounts-1, right_ind + 3)

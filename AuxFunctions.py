@@ -63,7 +63,9 @@ def multi_gauss_scale(amps, disps):
     return 1/np.sqrt(2*np.pi)/np.sum(disps * amps)
 
 def gauss_function(x, scale=1, shift=0, disp=1):
-    return scale * np.exp(-(x - shift)**2 / 2 / disp**2)
+    # return scale * np.exp(-(x - shift)**2 / 2 / disp**2)
+    return scale * 1/np.cosh((x - shift)/ disp)
+
 
 def gaussian_mixture(x, gauss_data):
     # scales, shifts, disps = np.array(scales), np.array(shifts), np.array(disps)
@@ -107,7 +109,7 @@ def inverse_sample_function(dist, Npnts, x_min=-100, x_max=100, n=1e6, **kwargs)
 def calculate_width(chi, beta, rho):
     dzeta = beta + chi
     if np.sqrt(np.sin((rho + beta)/2) * np.sin((rho - beta)/2) / np.sin(chi) / np.sin(dzeta)) >= 1:
-        return np.nan
+        return 2 * np.pi
     return 4 * np.arcsin(np.sqrt(np.sin((rho + beta)/2) * np.sin((rho - beta)/2) \
     / np.sin(chi) / np.sin(dzeta)))
 
